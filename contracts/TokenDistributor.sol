@@ -17,18 +17,16 @@ contract TokenDistributor {
     address private _tokenAddress;
 
     // Array to hold all addresses that will receive a payment
-    /**
-      * @dev visibility not specified, defaults to public
-     */
+
+    ///@dev visibility not specified, defaults to public
     address[] beneficiaries;
 
     // Total amount of tokens to distribute
     uint256 private _totalAmount;
 
     // Mapping to keep track of how many tokens each beneficiary will receive
-    /**
-      * @dev visibility not specified, defaults to public
-     */
+
+    ///@dev visibility not specified, defaults to public
     mapping(address => uint256) amountsByBeneficiary;
 
     modifier onlyOwner() {
@@ -49,20 +47,16 @@ contract TokenDistributor {
      * Add the address of a beneficiary that will receive a certain amount of tokens.
      */
 
-    /**
-      * @dev action with sensitive changes that does not emit any event.
-     */
+    ///@dev action with sensitive changes that does not emit any event.
     function registerBeneficiary(address beneficiary, uint256 amount)
         external
         onlyOwner
     {
         require(amount > 0, "Amount must be greater than zero");
-
-        /**
-         * @dev Integer overflow danger, should use SafeMath.
-         */
+        ///@dev Integer overflow danger, should use SafeMath.
         _totalAmount += amount;
         beneficiaries.push(beneficiary);
+        ///@dev Integer overflow danger, should use SafeMath.
         amountsByBeneficiary[beneficiary] += amount;
     }
 
@@ -70,10 +64,7 @@ contract TokenDistributor {
      * Decrease, by the given amount, the number of tokens a beneficiary will receive.
      */
 
-    /**
-      * @dev action with sensitive changes that does not emit any event.
-     */
-
+    /// @dev action with sensitive changes that does not emit any event.
     function decreaseBenefit(address beneficiary, uint256 amount)
         public
         onlyOwner
@@ -83,11 +74,10 @@ contract TokenDistributor {
             "Beneficiary does not exist"
         );
 
-        /**
-          * @dev Integer underflow danger, should use SafeMath.
-         */
         // Decrease total and beneficiary's amount
+        /// @dev Integer underflow danger, should use SafeMath.
         _totalAmount -= amount;
+        /// @dev Integer underflow danger, should use SafeMath.
         amountsByBeneficiary[beneficiary] -= amount;
     }
 
@@ -107,9 +97,7 @@ contract TokenDistributor {
      * Private function to pay a single beneficiary
      */
 
-    /**
-      * @dev visibility not specified, defaults to public i.e. anyone can call this function
-      */
+    /// @dev visibility not specified, defaults to public i.e. anyone can call this function
     function _paySingleBeneficiary(address beneficiary) {
         uint256 amount = amountsByBeneficiary[beneficiary];
 
@@ -117,9 +105,7 @@ contract TokenDistributor {
         IERC20(_tokenAddress).transfer(beneficiary, amount);
 
         // Decrease total amount of tokens to be distributed
-        /**
-          * @dev Integer underflow danger, should use SafeMath.
-         */
+        /// @dev Integer underflow danger, should use SafeMath.
         _totalAmount -= amount;
     }
 
@@ -132,16 +118,13 @@ contract TokenDistributor {
     function getAmount(address beneficiary) external view returns (uint256) {
         return amountsByBeneficiary[beneficiary];
     }
-    /**
-      * @dev mutability can be specified as view.  
-     */
+
+    ///@dev mutability can be specified as view.
     function owner() external returns (address) {
         return _owner;
     }
 
-    /**
-      * @dev mutability can be specified as view.  
-     */
+    /// @dev mutability can be specified as view.
     function tokenAddress() external returns (address) {
         return _tokenAddress;
     }

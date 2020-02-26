@@ -10,7 +10,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @notice Fully-compliant ERC20 mintable token
  */
 contract Token is ERC20Mintable {
-    ///@dev why are this  declared as private, but created a getter function at the end of the contract?
+    ///@dev why are these declared as private, but created a getter function at the end of the contract?
     string private constant _name = "Token";
     string private constant _symbol = "TKN";
     uint8 private constant _decimals = 18;

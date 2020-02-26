@@ -11,6 +11,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 contract TokenDistributor {
     using SafeMath for uint256;
 
+    /// @dev again, private variables that can be obtained with a getter, isn't it easier to use public variables?
     address private _owner;
 
     // Address of the token contract
@@ -37,6 +38,7 @@ contract TokenDistributor {
     /**
      * Constructor
      */
+    /// @dev should use the 'constructor' keyword to avoid problems if the contract name is changed.
     function TokenDistributor(address tokenAddress) public {
         require(tokenAddress != address(0));
         _tokenAddress = tokenAddress;
@@ -86,6 +88,10 @@ contract TokenDistributor {
       * having a DoS with block gas limit. A withdrawal pattern is recommended in this case 
       * (https://solidity.readthedocs.io/en/v0.6.3/common-patterns.html#withdrawal-from-contracts)
       * @dev Should emit an event if is transferrring tokens.
+      * @dev since index is a uint8, the beneficiaries length can't be bigger than 256. The elements 257 and bigger
+      * are not going to be considered at the _paySingleBeneficiary function.
+      * @dev If beneficiaries is bigger than 256, then this function is going to be reverted as this 'for' loop
+      * would behave as a infinite loop i.e. is going to run out of gas.
      */
     function payAllBeneficiaries() external onlyOwner {
         for (uint8 index = 0; index < beneficiaries.length; index++) {

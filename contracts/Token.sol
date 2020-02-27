@@ -17,6 +17,11 @@ contract Token is ERC20Mintable {
 
     constructor() public {
         uint8 base = 10;
+        /**
+        @dev initialSupply will be 0, since base and decimals are uint8 i.e. max value stored
+        by base and _decimals is 255, and any multiple of 256 is going to be 'overflowed' to 0.
+        In this case, 10^18 (base**_decimals) is multiple of 256, so it will be 1000 * 0 = 0
+        */
         uint256 initialSupply = 1000 * (base**_decimals);
         // The account creating the token receives the whole initial supply
         _mint(msg.sender, initialSupply);
@@ -36,12 +41,14 @@ contract Token is ERC20Mintable {
 
         // Send tokens to timelock
         transfer(address(newTimelock), amount);
+
     }
 
     /**
      * Issue new tokens, but first keep them in a timelock contract for a specific period of time
      */
 
+    ///@dev isn't this supposed to be executable only by the Token owner or minter?
     function timelockMint(
         address beneficiary,
         uint256 amount,
@@ -56,7 +63,8 @@ contract Token is ERC20Mintable {
 
         /**
         * @dev this was supposed to be the 'mint' function, not the '_mint' function. '_mint' is an internal function at the
-        ERC20.sol contract without access control i.e. anyone could mint tokens without being the minter.
+        ERC20.sol contract without access control i.e. anyone could mint tokens without being the minter, whilst 'mint'
+        is a safe function at the ERC20Mintable which can only be called by the minter (the contract owner).
         */
         // Mint tokens to timelock
         _mint(address(newTimelock), amount);

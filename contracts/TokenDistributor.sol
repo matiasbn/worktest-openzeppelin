@@ -57,6 +57,8 @@ contract TokenDistributor {
         require(amount > 0, "Amount must be greater than zero");
         ///@dev Integer overflow danger, should use SafeMath.
         _totalAmount += amount;
+        ///@dev i think is better to use a mapping (address=>bool) that states if address
+        /// is in the list of beneficiaries. The owner can
         beneficiaries.push(beneficiary);
         ///@dev Integer overflow danger, should use SafeMath.
         amountsByBeneficiary[beneficiary] += amount;

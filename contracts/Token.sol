@@ -70,16 +70,16 @@ contract Token is ERC20Mintable {
         _mint(address(newTimelock), amount);
     }
 
-    // Returning local parameters instead of storage parameters
-    function name() public view returns (string) {
+    /// @dev here it returns the local variables with underscore, which are empty
+    function name() public view returns (string _name) {
         return _name;
     }
 
-    function symbol() public view returns (string) {
+    function symbol() public view returns (string _symbol) {
         return _symbol;
     }
 
-    function decimals() public view returns (uint8) {
+    function decimals() public view returns (uint8 _decimals) {
         return _decimals;
     }
 }

@@ -2,6 +2,32 @@ const Token = artifacts.require('Token');
 const TokenDistributor = artifacts.require('TokenDistributor');
 const TokenTimelock = artifacts.require('TokenTimelock');
 
+
+const mineBlock = () => new Promise((resolve, reject) => {
+  web3.currentProvider.send({
+    jsonrpc: '2.0',
+    method: 'evm_mine',
+    id: new Date().getTime(),
+  }, (err, result) => {
+    if (err) { return reject(err); }
+    const newBlockHash = web3.eth.getBlock('latest').hash;
+
+    return resolve(newBlockHash);
+  });
+});
+
+const advanceTime = (time) => new Promise((resolve, reject) => {
+  web3.currentProvider.send({
+    jsonrpc: '2.0',
+    method: 'evm_increaseTime',
+    params: [time],
+    id: new Date().getTime(),
+  }, (err, result) => {
+    if (err) { return reject(err); }
+    return resolve(result);
+  });
+});
+
 contract('Token', (accounts) => {
   let token;
 
@@ -67,19 +93,13 @@ contract('Token', (accounts) => {
     assert.equal(user, beneficiary, 'Beneficiary is not the user');
     const userBalance = await token.balanceOf(user);
     assert.equal(userBalance.toNumber(), 0, 'userBalance should be 0 at first');
-    // wait until the next block
-    // let currentBlockNumber = blockNumber;
-    // while (blockNumber === currentBlockNumber) {
-    //   currentBlockNumber = await web3.eth.getBlockNumber();
-    //   console.log(currentBlockNumber);
-    // }
-    // console.log(currentBlockNumber);
-    // await tokenTimelock.release();
-    // const userBalance2 = await token.balanceOf(user);
-    // assert.equal(userBalance2.toNumber(), lockedvalue, 'userBalance should be 0 at first');
+    await advanceTime(100);
+    await mineBlock();
+    await tokenTimelock.release({ from: user });
+    const userBalance2 = await token.balanceOf(user);
+    assert.equal(userBalance2.toNumber(), lockedvalue, 'userBalance should be the lockedValue');
   });
 });
-
 
 contract('Token Distributor', (accounts) => {
   let token;

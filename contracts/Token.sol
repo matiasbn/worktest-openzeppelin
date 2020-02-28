@@ -40,8 +40,8 @@ contract Token is ERC20Mintable {
         );
 
         // Send tokens to timelock
+        ///@dev it should use SafeERC20 to check if the transfer was successful
         transfer(address(newTimelock), amount);
-
     }
 
     /**
@@ -70,15 +70,16 @@ contract Token is ERC20Mintable {
         _mint(address(newTimelock), amount);
     }
 
-    function name() public view returns (string _name) {
+    // Returning local parameters instead of storage parameters
+    function name() public view returns (string) {
         return _name;
     }
 
-    function symbol() public view returns (string _symbol) {
+    function symbol() public view returns (string) {
         return _symbol;
     }
 
-    function decimals() public view returns (uint8 _decimals) {
+    function decimals() public view returns (uint8) {
         return _decimals;
     }
 }

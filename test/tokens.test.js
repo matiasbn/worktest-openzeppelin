@@ -4,12 +4,9 @@ const TokenTimelock = artifacts.require('TokenTimelock');
 
 contract('Token', (accounts) => {
   let token;
-  let tokenDistributor;
 
   beforeEach(async () => {
-    // token = await Token.new({ value: web3.utils.toWei('1'), from: owner });
     token = await Token.new();
-    tokenDistributor = await TokenDistributor.new(token.address);
   });
 
   const owner = accounts[0];
@@ -71,14 +68,86 @@ contract('Token', (accounts) => {
     const userBalance = await token.balanceOf(user);
     assert.equal(userBalance.toNumber(), 0, 'userBalance should be 0 at first');
     // wait until the next block
-    let currentBlockNumber = blockNumber;
-    while (blockNumber === currentBlockNumber) {
-      currentBlockNumber = await web3.eth.getBlockNumber();
-      console.log(currentBlockNumber);
-    }
-    console.log(currentBlockNumber);
-    await tokenTimelock.release();
-    const userBalance2 = await token.balanceOf(user);
-    assert.equal(userBalance2.toNumber(), lockedvalue, 'userBalance should be 0 at first');
+    // let currentBlockNumber = blockNumber;
+    // while (blockNumber === currentBlockNumber) {
+    //   currentBlockNumber = await web3.eth.getBlockNumber();
+    //   console.log(currentBlockNumber);
+    // }
+    // console.log(currentBlockNumber);
+    // await tokenTimelock.release();
+    // const userBalance2 = await token.balanceOf(user);
+    // assert.equal(userBalance2.toNumber(), lockedvalue, 'userBalance should be 0 at first');
+  });
+});
+
+
+contract('Token Distributor', (accounts) => {
+  let token;
+  let tokenDistributor;
+
+  beforeEach(async () => {
+    // token = await Token.new({ value: web3.utils.toWei('1'), from: owner });
+    token = await Token.new();
+    tokenDistributor = await TokenDistributor.new(token.address);
+  });
+
+  const owner = accounts[0];
+  const user = accounts[1];
+
+  it('beneficiaries registered multiple times receives not expected amount of tokens at payment time', async () => {
+    // Mint tokens and transfer to the TokenDistributor contract
+    const amount = 100;
+    await token.mint(tokenDistributor.address, amount);
+    const tokenDistributorBalance = await token.balanceOf(tokenDistributor.address);
+    assert.equal(tokenDistributorBalance, amount, 'Amount not minted and assigned to TokenDistributor contract');
+    // Assign a beneficiary twice, for a total of 50
+    await tokenDistributor.registerBeneficiary(user, 25);
+    await tokenDistributor.registerBeneficiary(user, 25);
+    // Pay the beneficiaries
+    await tokenDistributor.payAllBeneficiaries();
+    // Check the new balances for the 'user' and the TokenDistributor contract
+    // The user balance is 100 because it was registered twice with a value of 25 each
+    const newBalance = await token.balanceOf(tokenDistributor.address);
+    assert.equal(newBalance, 0, 'The new balance is not 0');
+    const userBalance = await token.balanceOf(user);
+    assert.equal(userBalance, amount, 'userBalance is not the same as amount');
+  });
+
+  it('any beneficiary can withdraw the amount assigned to them until contract balanace is 0', async () => {
+    // Mint tokens and transfer to the TokenDistributor contract
+    const amount = 100;
+    await token.mint(tokenDistributor.address, amount);
+    const tokenDistributorBalance = await token.balanceOf(tokenDistributor.address);
+    assert.equal(tokenDistributorBalance, amount, 'Amount not minted and assigned to TokenDistributor contract');
+    // Assign a beneficiary for a total of 25
+    await tokenDistributor.registerBeneficiary(user, 25);
+    // Current balance of user should be 0
+    const userBalance = await token.balanceOf(user);
+    assert.equal(userBalance, 0, 'initial user balance should be 0');
+    // Beneficiary calls _paySingleBeneficiary and it balance should be 25, and the contract balance should be 100-25=75
+    await tokenDistributor._paySingleBeneficiary(user, { from: user });
+    const newUserBalance = await token.balanceOf(user);
+    const newContractBalance = await token.balanceOf(tokenDistributor.address);
+    assert.equal(newUserBalance, 25, 'user balance was not updated');
+    assert.equal(newContractBalance, 75, 'contract balance was not updated');
+    // Beneficiary calls _paySingleBeneficiary again, and balances should have to change
+    await tokenDistributor._paySingleBeneficiary(user, { from: user });
+    const newUserBalance2 = await token.balanceOf(user);
+    const newContractBalance2 = await token.balanceOf(tokenDistributor.address);
+    assert.equal(newUserBalance2, 50, 'user balance was not updated');
+    assert.equal(newContractBalance2, 50, 'contract balance was not updated');
+    // Beneficiary calls _paySingleBeneficiary again, and balances should have to change
+    await tokenDistributor._paySingleBeneficiary(user, { from: user });
+    const newUserBalance3 = await token.balanceOf(user);
+    const newContractBalance3 = await token.balanceOf(tokenDistributor.address);
+    assert.equal(newUserBalance3, 75, 'user balance was not updated');
+    assert.equal(newContractBalance3, 25, 'contract balance was not updated');
+    // Beneficiary calls _paySingleBeneficiary again, and balances should have to change
+    // At this point the user owns all the tokens and the contract balance was emptied
+    await tokenDistributor._paySingleBeneficiary(user, { from: user });
+    const newUserBalance4 = await token.balanceOf(user);
+    const newContractBalance4 = await token.balanceOf(tokenDistributor.address);
+    assert.equal(newUserBalance4, 100, 'user balance was not updated');
+    assert.equal(newContractBalance4, 0, 'contract balance was not updated');
   });
 });

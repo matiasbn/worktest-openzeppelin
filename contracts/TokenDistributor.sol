@@ -104,12 +104,21 @@ contract TokenDistributor {
     /**
      * Private function to pay a single beneficiary
      */
-
-    /// @dev visibility not specified, defaults to public i.e. anyone can call this function
+    /**
+    @dev visibility not specified, defaults to public i.e. any beneficiary can call this function
+        until the balance of the contract is 0.
+    @dev should be internal to be used by paySingleBeneficiary
+     */
     function _paySingleBeneficiary(address beneficiary) {
+        /** 
+       @dev amountsByBeneficiary is not cleared to 0 after the transaction is done, so anyone
+       can call this function and take all the tokens from this contract.
+       */
+
         uint256 amount = amountsByBeneficiary[beneficiary];
 
         // Transfer tokens to beneficiary
+        ///@dev it should use SafeERC20 to check the boolean returned by ERC20's transfer
         IERC20(_tokenAddress).transfer(beneficiary, amount);
 
         // Decrease total amount of tokens to be distributed

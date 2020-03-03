@@ -1,6 +1,7 @@
 const Token = artifacts.require('Token');
 const TokenDistributor = artifacts.require('TokenDistributor');
 const TokenTimelock = artifacts.require('TokenTimelock');
+const { catchRevert } = require('./exceptionsHelpers');
 
 
 const mineBlock = () => new Promise((resolve, reject) => {
@@ -131,6 +132,28 @@ contract('Token Distributor', (accounts) => {
     assert.equal(newBalance, 0, 'The new balance is not 0');
     const userBalance = await token.balanceOf(user);
     assert.equal(userBalance, amount, 'userBalance is not the same as amount');
+  });
+
+  it('should reverse if the balance of the contract is not enough to pay to users', async () => {
+    // Mint tokens and transfer to the TokenDistributor contract
+    const amount = 50;
+    await token.mint(tokenDistributor.address, amount);
+    const tokenDistributorBalance = await token.balanceOf(tokenDistributor.address);
+    assert.equal(tokenDistributorBalance, amount, 'Amount not minted and assigned to TokenDistributor contract');
+    // Assign a beneficiary twice, for a total of 50
+    // In a regular workflow, this would not be expected to fail, because the contract have enough balance (2*25=50)
+    // But this is supposed to fail, because the contract is going to try to transfer 50 tokens
+    // 2 times, so it would revert.
+    await tokenDistributor.registerBeneficiary(user, 25);
+    await tokenDistributor.registerBeneficiary(user, 25);
+    // Pay the beneficiaries, and expect an exception
+    await catchRevert(tokenDistributor.payAllBeneficiaries());
+    // Check the new balances for the 'user' and the TokenDistributor contract
+    // Is expected to not have any changes
+    const newBalance = await token.balanceOf(tokenDistributor.address);
+    assert.equal(newBalance, amount, 'The new balance is not 0');
+    const userBalance = await token.balanceOf(user);
+    assert.equal(userBalance, 0, 'userBalance is not the same as amount');
   });
 
   it('any beneficiary can withdraw the amount assigned to them until contract balanace is 0', async () => {
